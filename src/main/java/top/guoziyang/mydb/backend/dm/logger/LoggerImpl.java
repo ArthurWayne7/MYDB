@@ -97,6 +97,7 @@ public class LoggerImpl implements Logger {
         }
 
         try {
+            // 截断文件到正常日志的末尾即remove 没写完的日志（bad tail）
             truncate(position);
         } catch (Exception e) {
             Panic.panic(e);
@@ -118,6 +119,7 @@ public class LoggerImpl implements Logger {
 
     @Override
     public void log(byte[] data) {
+        //首先将数据包裹成日志格式
         byte[] log = wrapLog(data);
         ByteBuffer buf = ByteBuffer.wrap(log);
         lock.lock();
@@ -129,6 +131,7 @@ public class LoggerImpl implements Logger {
         } finally {
             lock.unlock();
         }
+        //写入文件后，再更新文件的校验和
         updateXChecksum(log);
     }
 
@@ -137,6 +140,7 @@ public class LoggerImpl implements Logger {
         try {
             fc.position(0);
             fc.write(ByteBuffer.wrap(Parser.int2Byte(xChecksum)));
+            //刷新缓冲区，保证内容写入磁盘
             fc.force(false);
         } catch(IOException e) {
             Panic.panic(e);
@@ -184,7 +188,9 @@ public class LoggerImpl implements Logger {
         }
 
         byte[] log = buf.array();
+        //从OF_DATA到log.length区间的和（即Checksum * log的条数）
         int checkSum1 = calChecksum(0, Arrays.copyOfRange(log, OF_DATA, log.length));
+        //将log数组从OF_CHECKSUM到OF_DATA位置的和（即XChecksum）复制到一个数组中，然后转为int
         int checkSum2 = Parser.parseInt(Arrays.copyOfRange(log, OF_CHECKSUM, OF_DATA));
         if(checkSum1 != checkSum2) {
             return null;
