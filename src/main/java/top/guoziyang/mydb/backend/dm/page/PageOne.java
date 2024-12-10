@@ -25,11 +25,13 @@ public class PageOne {
         pg.setDirty(true);
         setVcOpen(pg.getData());
     }
-
+    //MYDB 的第一页，只是用来做启动检查。
+    //具体的原理是，在每次数据库启动时，会生成一串随机字节，存储在 100 ~ 107 字节。
     private static void setVcOpen(byte[] raw) {
         System.arraycopy(RandomUtil.randomBytes(LEN_VC), 0, raw, OF_VC, LEN_VC);
     }
 
+    //在数据库正常关闭时，会将这串字节，拷贝到第一页的 108 ~ 115 字节。
     public static void setVcClose(Page pg) {
         pg.setDirty(true);
         setVcClose(pg.getData());
@@ -39,10 +41,11 @@ public class PageOne {
         System.arraycopy(raw, OF_VC, raw, OF_VC+LEN_VC, LEN_VC);
     }
 
+    //校验字节
     public static boolean checkVc(Page pg) {
         return checkVc(pg.getData());
     }
-
+    //对比第一页的100～107字节 和 108 ～115字节
     private static boolean checkVc(byte[] raw) {
         return Arrays.equals(Arrays.copyOfRange(raw, OF_VC, OF_VC+LEN_VC), Arrays.copyOfRange(raw, OF_VC+LEN_VC, OF_VC+2*LEN_VC));
     }

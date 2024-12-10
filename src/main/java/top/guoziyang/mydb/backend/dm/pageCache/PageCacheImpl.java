@@ -45,7 +45,7 @@ public class PageCacheImpl extends AbstractCache<Page> implements PageCache {
     public int newPage(byte[] initData) {
         int pgno = pageNumbers.incrementAndGet();
         Page pg = new PageImpl(pgno, initData, null);
-        flush(pg);
+        flush(pg);//新建的页面需要立刻写回
         return pgno;
     }
 
@@ -54,6 +54,7 @@ public class PageCacheImpl extends AbstractCache<Page> implements PageCache {
     }
 
     /**
+     * 由于数据源就是文件系统，getForCache() 直接从文件中读取，并包裹成 Page 即可
      * 根据pageNumber从数据库文件中读取页数据，并包裹成Page
      */
     @Override
@@ -89,6 +90,7 @@ public class PageCacheImpl extends AbstractCache<Page> implements PageCache {
         flush(pg);
     }
 
+    //将脏页刷新到文件系统中（即模拟的磁盘）
     private void flush(Page pg) {
         int pgno = pg.getPageNumber();
         long offset = pageOffset(pgno);

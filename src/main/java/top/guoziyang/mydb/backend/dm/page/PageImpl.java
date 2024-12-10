@@ -8,6 +8,7 @@ import top.guoziyang.mydb.backend.dm.pageCache.PageCache;
 public class PageImpl implements Page {
     private int pageNumber;
     private byte[] data;
+    //dirty 标志着这个页面是否是脏页面，在缓存驱逐的时候，脏页面需要被写回磁盘
     private boolean dirty;
     private Lock lock;
     
