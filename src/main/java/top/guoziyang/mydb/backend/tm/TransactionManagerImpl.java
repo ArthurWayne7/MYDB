@@ -51,17 +51,20 @@ public class TransactionManagerImpl implements TransactionManager {
         } catch (IOException e1) {
             Panic.panic(Error.BadXIDFileException);
         }
-        if(fileLen < LEN_XID_HEADER_LENGTH) {
+        if(fileLen < LEN_XID_HEADER_LENGTH) {//文件长度比8字节都小肯定不合法
             Panic.panic(Error.BadXIDFileException);
         }
 
         ByteBuffer buf = ByteBuffer.allocate(LEN_XID_HEADER_LENGTH);
         try {
+            //通过fc.position(0)设置为文件开头，即位置0，读取数据到ByteBuffer对象buf中
             fc.position(0);
             fc.read(buf);
         } catch (IOException e) {
             Panic.panic(e);
         }
+        //将ByteBuffer对象buf中的数据转换为字节数组
+        //然后使用Parser.parseLong方法将这个字节数组解析为一个长整型数（long）
         this.xidCounter = Parser.parseLong(buf.array());
         long end = getXidPosition(this.xidCounter + 1);
         if(end != fileLen) {
@@ -104,7 +107,7 @@ public class TransactionManagerImpl implements TransactionManager {
             Panic.panic(e);
         }
         try {
-            fc.force(false);
+            fc.force(false);//强制同步缓存内容到文件中
         } catch (IOException e) {
             Panic.panic(e);
         }
