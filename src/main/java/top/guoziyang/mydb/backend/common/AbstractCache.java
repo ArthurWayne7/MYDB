@@ -52,10 +52,13 @@ public abstract class AbstractCache<T> {
 
             // 尝试获取该资源
             if(maxResource > 0 && count == maxResource) {
+                //缓存满了，直接抛异常，类似于JVM的OOM
                 lock.unlock();
                 throw Error.CacheFullException;
             }
             count ++;
+            //资源不在缓存中且缓存没满
+            //在 getting 中注册一下，该线程准备从数据源获取资源了。
             getting.put(key, true);
             lock.unlock();
             break;
