@@ -42,4 +42,54 @@
       <version>1.5.0</version>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>create-db</id>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>top.guoziyang.mydb.backend.Launcher</mainClass>
+              <arguments>
+                <argument>-create</argument>
+                <argument>/tmp/mydb</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>open-db</id>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>top.guoziyang.mydb.backend.Launcher</mainClass>
+              <arguments>
+                <argument>-open</argument>
+                <argument>/tmp/mydb</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>run-client</id>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>top.guoziyang.mydb.client.Launcher</mainClass>
+              <arguments>
+                <!-- 这里可以添加客户端需要的参数 -->
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>
