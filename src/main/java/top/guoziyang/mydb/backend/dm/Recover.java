@@ -23,6 +23,11 @@ public class Recover {
 
     private static final byte LOG_TYPE_INSERT = 0;
     private static final byte LOG_TYPE_UPDATE = 1;
+    // updateLog:
+    // [LogType] [XID] [UID] [OldRaw] [NewRaw]
+
+    // insertLog:
+    // [LogType] [XID] [Pgno] [Offset] [Raw]
 
     private static final int REDO = 0;
     private static final int UNDO = 1;
@@ -42,15 +47,23 @@ public class Recover {
         byte[] newRaw;
     }
 
+    /**
+     * MYDB恢复策略：重做所有已完成事务，撤销所有未完成事务
+     * @param tm
+     * @param lg
+     * @param pc
+     */
     public static void recover(TransactionManager tm, Logger lg, PageCache pc) {
         System.out.println("Recovering...");
-
+        //重制日志到开始位置，以便重新读取日志
         lg.rewind();
         int maxPgno = 0;
         while(true) {
+            //读取日志和确定最大页号
             byte[] log = lg.next();
             if(log == null) break;
             int pgno;
+            //解析每个日志条目，确定它是插入日志还是更新日志，并获取涉及的页号
             if(isInsertLog(log)) {
                 InsertLogInfo li = parseInsertLog(log);
                 pgno = li.pgno;
@@ -59,18 +72,20 @@ public class Recover {
                 pgno = li.pgno;
             }
             if(pgno > maxPgno) {
+                //如果读取的页号大于当前记录的最大页号（maxPgno），则更新 maxPgno。
                 maxPgno = pgno;
             }
         }
         if(maxPgno == 0) {
             maxPgno = 1;
         }
+        //截断页面缓存到 maxPgno，移除未完成的事务可能创建的超出部分的页面。
         pc.truncateByBgno(maxPgno);
         System.out.println("Truncate to " + maxPgno + " pages.");
-
+        //重做所有已完成的事务
         redoTranscations(tm, lg, pc);
         System.out.println("Redo Transactions Over.");
-
+        //撤销所有未完成的事务
         undoTranscations(tm, lg, pc);
         System.out.println("Undo Transactions Over.");
 
@@ -173,6 +188,7 @@ public class Recover {
         return li;
     }
 
+    //将该条 DataItem 的有效位设置为无效，来进行逻辑删除
     private static void doUpdateLog(PageCache pc, byte[] log, int flag) {
         int pgno;
         short offset;
