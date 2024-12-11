@@ -16,6 +16,9 @@ import top.guoziyang.mydb.backend.dm.page.Page;
  */
 public class DataItemImpl implements DataItem {
 
+    //其中 ValidFlag 占用 1 字节，标识了该 DataItem 是否有效。
+    // 删除一个 DataItem，只需要简单地将其有效位设置为 0。
+    // DataSize 占用 2 字节，标识了后面 Data 的长度。
     static final int OF_VALID = 0;
     static final int OF_SIZE = 1;
     static final int OF_DATA = 3;
@@ -45,9 +48,15 @@ public class DataItemImpl implements DataItem {
 
     @Override
     public SubArray data() {
+        //该方法返回的数组是数据共享的
         return new SubArray(raw.raw, raw.start+OF_DATA, raw.end);
     }
 
+    //在上层模块试图对 DataItem 进行修改时，需要遵循一定的流程：
+    // 在修改之前需要调用 before() 方法，
+    // 想要撤销修改时，调用 unBefore() 方法，
+    // 在修改完成后，调用 after() 方法。
+    // 整个流程，主要是为了保存前相数据，并及时落日志。DM 会保证对 DataItem 的修改是原子性的。
     @Override
     public void before() {
         wLock.lock();
@@ -67,6 +76,7 @@ public class DataItemImpl implements DataItem {
         wLock.unlock();
     }
 
+    //使用完 DataItem 后，也应当及时调用 release() 方法，释放掉 DataItem 的缓存
     @Override
     public void release() {
         dm.releaseDataItem(this);

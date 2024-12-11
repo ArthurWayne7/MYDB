@@ -11,6 +11,7 @@ public interface DataManager {
     long insert(long xid, byte[] data) throws Exception;
     void close();
 
+    //从空文件创建DataManager首先需要对第一页进行初始化
     public static DataManager create(String path, long mem, TransactionManager tm) {
         PageCache pc = PageCache.create(path, mem);
         Logger lg = Logger.create(path);
@@ -19,7 +20,7 @@ public interface DataManager {
         dm.initPageOne();
         return dm;
     }
-
+    // 从已有文件创建DataManager，则是需要对第一页进行校验，来判断是否需要执行恢复流程。并重新对第一页生成随机字节。
     public static DataManager open(String path, long mem, TransactionManager tm) {
         PageCache pc = PageCache.open(path, mem);
         Logger lg = Logger.open(path);

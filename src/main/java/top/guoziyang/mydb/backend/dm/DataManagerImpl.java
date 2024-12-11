@@ -104,6 +104,7 @@ public class DataManagerImpl extends AbstractCache<DataItem> implements DataMana
         super.release(di.getUid());
     }
 
+    //从 key 中解析出页号，从 pageCache 中获取到页面，再根据偏移，解析出 DataItem
     @Override
     protected DataItem getForCache(long uid) throws Exception {
         short offset = (short)(uid & ((1L << 16) - 1));
@@ -113,6 +114,8 @@ public class DataManagerImpl extends AbstractCache<DataItem> implements DataMana
         return DataItem.parseDataItem(pg, offset, this);
     }
 
+    //DataItem 缓存释放，需要将 DataItem 写回数据源
+    //由于对文件的读写是以页为单位进行的，只需要将 DataItem 所在的页 release 即可
     @Override
     protected void releaseForCache(DataItem di) {
         di.page().release();
@@ -140,7 +143,7 @@ public class DataManagerImpl extends AbstractCache<DataItem> implements DataMana
         return PageOne.checkVc(pageOne);
     }
 
-    // 初始化pageIndex
+    // 获取所有页面并填充 PageIndex
     void fillPageIndex() {
         int pageNumber = pc.getPageNumber();
         for(int i = 2; i <= pageNumber; i ++) {
@@ -151,6 +154,7 @@ public class DataManagerImpl extends AbstractCache<DataItem> implements DataMana
                 Panic.panic(e);
             }
             pIndex.add(pg.getPageNumber(), PageX.getFreeSpace(pg));
+            //使用完 Page 后需要及时 release，否则可能会撑爆缓存
             pg.release();
         }
     }
